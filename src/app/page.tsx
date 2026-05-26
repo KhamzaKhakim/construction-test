@@ -28,14 +28,22 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/lib/client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { CreateTaskForm, CreateTaskSchema } from "../../shared/types/task";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createColumns } from "@/components/tasks/columns";
 import { DataTable } from "@/components/tasks/data-table";
 import { Switch } from "@/components/ui/switch";
 
-export default function Home() {
+export default function Page() {
+  return (
+    <Suspense>
+      <Home />
+    </Suspense>
+  );
+}
+
+function Home() {
   const queryClient = useQueryClient();
 
   const { data: tasks = [] } = useQuery({
