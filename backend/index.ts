@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { Elysia, status, t } from "elysia";
 import { Task } from "../shared/types/task";
 import { Employee } from "../shared/types/worker";
 
@@ -91,6 +91,17 @@ export const app = new Elysia({ prefix: "/api" })
         responsible: t.Optional(t.Number()),
       }),
     },
-  );
+  )
+  .delete("/tasks/:id", ({ params: { id } }) => {
+    const taskId = Number(id);
+    console.log(id);
+    const exists = tasks.some((t) => t.id === taskId);
+    if (!exists) return status(404, "Task not found");
+    tasks.splice(
+      tasks.findIndex((t) => t.id === taskId),
+      1,
+    );
+    return { success: true };
+  });
 
 export type App = typeof app;

@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Employee } from "../../../shared/types/worker";
 import { Task } from "../../../shared/types/task";
@@ -9,6 +9,7 @@ import { formatUnit } from "../../../shared/utils";
 
 export const createColumns = (
   workerMap: Map<number, Employee>,
+  onDelete: (id: number) => void,
 ): ColumnDef<Task>[] => [
   {
     accessorKey: "name",
@@ -72,5 +73,17 @@ export const createColumns = (
       const value = row.getValue("finishedAt");
       return value ? (value as Date).toLocaleDateString("ru-RU") : "-";
     },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onDelete(row.original.id)}
+      >
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    ),
   },
 ];

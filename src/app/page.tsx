@@ -35,6 +35,8 @@ import { createColumns } from "@/components/tasks/columns";
 import { DataTable } from "@/components/tasks/data-table";
 
 export default function Home() {
+  const queryClient = useQueryClient();
+
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
@@ -51,11 +53,21 @@ export default function Home() {
     },
   });
 
+  const { mutate: deleteTask } = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await api.api.tasks({ id }).delete();
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
   const [dateFrom, setDateFrom] = useQueryState("dateFrom", parseAsIsoDate);
   const [dateTo, setDateTo] = useQueryState("dateTo", parseAsIsoDate);
 
   const workerMap = new Map(workers.map((w) => [w.id, w]));
-  const columns = createColumns(workerMap);
+  const columns = createColumns(workerMap, deleteTask);
 
   return (
     <div className="flex flex-col items-center p-8">
