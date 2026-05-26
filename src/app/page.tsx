@@ -2,15 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatUnit } from "../../shared/utils";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -40,6 +31,8 @@ import { api } from "@/lib/client";
 import { useState } from "react";
 import { CreateTaskForm, CreateTaskSchema } from "../../shared/types/task";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { createColumns } from "@/components/tasks/columns";
+import { DataTable } from "@/components/tasks/data-table";
 
 export default function Home() {
   const { data: tasks = [] } = useQuery({
@@ -62,6 +55,7 @@ export default function Home() {
   const [dateTo, setDateTo] = useQueryState("dateTo", parseAsIsoDate);
 
   const workerMap = new Map(workers.map((w) => [w.id, w]));
+  const columns = createColumns(workerMap);
 
   return (
     <div className="flex flex-col items-center p-8">
@@ -82,34 +76,7 @@ export default function Home() {
         <CreateDialog />
       </div>
       <div className="min-w-240 m-8">
-        <Table className="text-center">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Название</TableHead>
-              <TableHead>Объём</TableHead>
-              <TableHead>Назначен</TableHead>
-              <TableHead>Создано</TableHead>
-              <TableHead>Завершен</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tasks.map((t) => (
-              <TableRow key={t.id}>
-                <TableCell>{t.name}</TableCell>
-                <TableCell>{formatUnit(t.unit)}</TableCell>
-                <TableCell>
-                  {t.responsible
-                    ? (workerMap.get(t.responsible)?.name ?? "-")
-                    : "-"}
-                </TableCell>
-                <TableCell>
-                  {new Date(t.createdAt).toLocaleDateString("ru-RU")}
-                </TableCell>
-                <TableCell>{t.finishedAt ? t.finishedAt : "-"}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable columns={columns} data={tasks} />
       </div>
     </div>
   );

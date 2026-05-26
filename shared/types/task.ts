@@ -13,6 +13,6 @@ export type Task = {
   name: string;
   unit: string;
   responsible?: number;
-  createdAt: string;
-  finishedAt?: string;
+  createdAt: Date;
+  finishedAt?: Date;
 };
