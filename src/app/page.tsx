@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import { parseAsIsoDate, useQueryState } from "nuqs";
+import { parseAsInteger, parseAsIsoDate, useQueryState } from "nuqs";
 import {
   Dialog,
   DialogClose,
@@ -28,11 +28,12 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/lib/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CreateTaskForm, CreateTaskSchema } from "../../shared/types/task";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createColumns } from "@/components/tasks/columns";
 import { DataTable } from "@/components/tasks/data-table";
+import { Switch } from "@/components/ui/switch";
 
 export default function Home() {
   const queryClient = useQueryClient();
@@ -63,14 +64,83 @@ export default function Home() {
     },
   });
 
+  const { mutate: finishTask } = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await api.api.tasks({ id }).finish.patch({
+        userId: currentUserId!,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
   const [dateFrom, setDateFrom] = useQueryState("dateFrom", parseAsIsoDate);
   const [dateTo, setDateTo] = useQueryState("dateTo", parseAsIsoDate);
+  const [responsible, setResponsible] = useQueryState(
+    "responsible",
+    parseAsInteger,
+  );
+  const [currentUserId, setCurrentUserId] = useQueryState(
+    "currentUserId",
+    parseAsInteger,
+  );
 
   const workerMap = new Map(workers.map((w) => [w.id, w]));
-  const columns = createColumns(workerMap, deleteTask);
+  const columns = createColumns(
+    workerMap,
+    deleteTask,
+    finishTask,
+    currentUserId,
+  );
+
+  useEffect(() => {
+    if (workers.length > 0 && currentUserId === null) {
+      const manager = workers.find((w) => w.type === "manager");
+
+      setCurrentUserId(manager?.id ?? workers[0].id);
+    }
+  }, [workers, currentUserId, setCurrentUserId]);
+
+  const currentUser = workers.find((w) => w.id === currentUserId) ?? null;
+  const isManager = currentUser?.type === "manager";
 
   return (
     <div className="flex flex-col items-center p-8">
+      <div className="flex min-w-240 mb-4 gap-4">
+        <Select
+          value={currentUserId ? String(currentUserId) : ""}
+          onValueChange={(v) => {
+            if (responsible) setResponsible(null);
+            setCurrentUserId(Number(v));
+          }}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Выберите юзера" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {workers.map((w) => (
+                <SelectItem key={w.id} value={String(w.id)}>
+                  {w.name} ({w.type === "manager" ? "Менеджер" : "Работник"})
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="only-mine"
+            checked={!!responsible}
+            onCheckedChange={() =>
+              responsible ? setResponsible(null) : setResponsible(currentUserId)
+            }
+            disabled={!currentUserId}
+          />
+          <Label htmlFor="only-mine">Мои задачи</Label>
+        </div>
+      </div>
       <div className="flex justify-between min-w-240">
         <div className="flex gap-4">
           <Field>
@@ -85,7 +155,7 @@ export default function Home() {
             <DatePicker value={dateTo} onChange={(v) => setDateTo(v ?? null)} />
           </Field>
         </div>
-        <CreateDialog />
+        {isManager && <CreateDialog />}
       </div>
       <div className="min-w-240 m-8">
         <DataTable columns={columns} data={tasks} />

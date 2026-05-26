@@ -22,7 +22,12 @@ import {
 } from "@/components/ui/table";
 import { useMemo, useCallback } from "react";
 import { Label } from "@/components/ui/label";
-import { parseAsIsoDate, parseAsStringLiteral, useQueryState } from "nuqs";
+import {
+  parseAsInteger,
+  parseAsIsoDate,
+  parseAsStringLiteral,
+  useQueryState,
+} from "nuqs";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -43,6 +48,10 @@ export function DataTable<TData, TValue>({
 
   const [dateFrom] = useQueryState("dateFrom", parseAsIsoDate);
   const [dateTo] = useQueryState("dateTo", parseAsIsoDate);
+  const [responsible, setResponsible] = useQueryState(
+    "responsible",
+    parseAsInteger,
+  );
 
   const sorting = useMemo<SortingState>(
     () =>
@@ -58,8 +67,9 @@ export function DataTable<TData, TValue>({
         id: "createdAt",
         value: [dateFrom ?? null, dateTo ?? null],
       },
+      ...(responsible ? [{ id: "responsible", value: responsible }] : []),
     ],
-    [dateFrom, dateTo],
+    [dateFrom, dateTo, responsible],
   );
 
   const handleSortingChange = useCallback<OnChangeFn<SortingState>>(

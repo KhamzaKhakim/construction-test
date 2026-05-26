@@ -102,6 +102,23 @@ export const app = new Elysia({ prefix: "/api" })
       1,
     );
     return { success: true };
-  });
+  })
+  .patch(
+    "/tasks/:id/finish",
+    ({ params: { id }, body }) => {
+      const task = tasks.find((t) => t.id === Number(id));
+      if (!task) return status(404, "Task not found");
+      if (task.responsible !== body.userId)
+        return status(403, "Not authorized");
+      if (task.finishedAt) return status(400, "Already finished");
+      task.finishedAt = new Date();
+      return task;
+    },
+    {
+      body: t.Object({
+        userId: t.Number(),
+      }),
+    },
+  );
 
 export type App = typeof app;
